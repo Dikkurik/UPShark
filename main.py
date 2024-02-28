@@ -6,12 +6,13 @@ from bs4 import BeautifulSoup
 print('Started UPShark script ver 1.02\n')
 
 class GetUPS():
+    # read UPS list from Json when object is called
     def __init__(self):
         with open('ups_list.json', 'r+', encoding='utf-8') as file:
                 self.ups_list = json.load(file)
 
+    #Eaton functions
     def getEatonPage(self):
-        
         for i in (self.ups_list['eaton']):
             #Собираем URL 
             combUrl = 'http://'+self.ups_list['eaton'][i]+'/ups_propAlarms.htm'
@@ -44,6 +45,7 @@ class GetUPS():
         except:
             print('Something went wrong! Unexpected result')
 
+    # Entel functions
     def getEntelPage(self):
         for i in self.ups_list['entel']:
             combUrl = 'http://'+self.ups_list['entel'][i]['ipaddres']+'/Status.htm'
@@ -57,13 +59,11 @@ class GetUPS():
                 print('!INFO Successful connected to UPS at destination', self.ups_list['entel'][i]['ipaddres'])
                 page = req.text
                 self.checkError_Entel(page)
-
-                
+                print('\n')                
             except:
                 print('Connection timed out')
-                print(self.ups_list['entel'][i]['ipaddres'],
-                      self.ups_list['entel'][i]['login'],
-                      self.ups_list['entel'][i]['password'])
+                print('Возможные причины: Неверный логин или пароль;\nНет связи с объектом')
+                print('\n')
                 
     def checkError_Entel(self, page):
         soup = BeautifulSoup(page, 'lxml')
@@ -85,6 +85,7 @@ class GetUPS():
 
 if __name__ == '__main__':
     shark = GetUPS()
+    shark.getEatonPage()
     shark.getEntelPage()
     input('press enter to exit')
 
