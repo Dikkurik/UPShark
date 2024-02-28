@@ -8,13 +8,14 @@ print('Started UPShark script ver 1.02\n')
 class GetUPS():
     # read UPS list from Json when object is called
     def __init__(self):
+        self.headers = {'user-agent':'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0'}
         with open('ups_list.json', 'r+', encoding='utf-8') as file:
                 self.ups_list = json.load(file)
 
     #Eaton functions
     def getEatonPage(self):
         for i in (self.ups_list['eaton']):
-            #Собираем URL 
+            #CombineURl URL 
             combUrl = 'http://'+self.ups_list['eaton'][i]+'/ups_propAlarms.htm'
             try:
                 req = requests.get(combUrl)
@@ -27,10 +28,9 @@ class GetUPS():
             except:
                 print(i, '!ERROR Connection timed out')
                 print('\n')
-        input('press enter to exit')
 
     def checkError_Eaton(self, page: str) -> int:
-        #Объявляем объект супа с данными страницы
+        #define soup object with page info
         soup = BeautifulSoup(page, 'lxml')
         errors = []
         errors = soup.find_all(class_='listline1')
@@ -48,28 +48,42 @@ class GetUPS():
     # Entel functions
     def getEntelPage(self):
         for i in self.ups_list['entel']:
-            combUrl = 'http://'+self.ups_list['entel'][i]['ipaddres']+'/Status.htm'
+            combUrl = 'http://'+self.ups_list['entel'][i]['ipaddres']+'/status.htm'
+            
             try:
-                req = requests.get(combUrl, 
+                num = 1
+                status = True
+                while status:
+                    req = requests.get(combUrl, 
                                     auth=(
                                     self.ups_list['entel'][i]['login'],
                                     self.ups_list['entel'][i]['password']
-                                    ))
-                print(i, '***** ENTEL')
-                print('!INFO Successful connected to UPS at destination', self.ups_list['entel'][i]['ipaddres'])
-                page = req.text
-                self.checkError_Entel(page)
-                print('\n')                
+                                    ), headers=self.headers)
+                    print(i, '!INFO connected. Status code: ',req.status_code)
+                    if req.status_code == 200:
+                        print('!INFO Authorized. Parse data.')
+                        status = False
+                        page = req.text
+                        print(i, '***** ENTEL')
+                        print('!INFO Successful connected to UPS at destination', self.ups_list['entel'][i]['ipaddres'])
+                        self.checkError_Entel(page)
+                        print('\n') 
+                    else:
+                        print('!ERROR authorization fail.')
+                        print('!INFO Retry connect. Tries:', num)
+                        num+=1
+                               
             except:
                 print('Connection timed out')
                 print('Возможные причины: Неверный логин или пароль;\nНет связи с объектом')
                 print('\n')
-                
+            
     def checkError_Entel(self, page):
         soup = BeautifulSoup(page, 'lxml')
         statuses = []
+        print(page)
         statuses = soup.find_all(class_='Tabtext')
-        statusOK = 'UPS Normal'
+        statusOK = 'UPS Normal' or 'ИБП в норме'
         stat = list(statuses)
         try:
             if statusOK in str(stat):
@@ -81,11 +95,9 @@ class GetUPS():
 
 
 
-
-
 if __name__ == '__main__':
     shark = GetUPS()
-    shark.getEatonPage()
+    #shark.getEatonPage()
     shark.getEntelPage()
     input('press enter to exit')
 
