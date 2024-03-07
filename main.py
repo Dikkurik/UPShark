@@ -97,7 +97,7 @@ class GetUPS():
 
 if __name__ == '__main__':
     shark = GetUPS()
-    #shark.getEatonPage()
+    shark.getEatonPage()
     shark.getEntelPage()
     input('press enter to exit')
 
