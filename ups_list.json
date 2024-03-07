@@ -5,5 +5,11 @@
 "entel":{"Тест":{
     "ipaddres":"10.0.0.1",
     "login":"admin",
-    "password":"admin "
-    }}}
+    "password":"admin"
+    }},
+
+"lpm":{"Тест":{
+    "ipaddres":"10.0.0.1"
+    }}
+
+}

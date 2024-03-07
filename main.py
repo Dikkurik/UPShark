@@ -1,9 +1,9 @@
-# Скрипт для опроса и получения данных ИБП фирмы Eaton по HTTP.
+# Скрипт для опроса и получения данных ИБП фирмы Eaton, Entel по HTTP.
 
 import requests, json
 from bs4 import BeautifulSoup
 
-print('Started UPShark script ver 1.02\n')
+print('Started UPShark script ver 1.04\n')
 
 class GetUPS():
     # read UPS list from Json when object is called
@@ -92,13 +92,24 @@ class GetUPS():
                 print('!!! UPS Alarm: CHECK UPS !!!')
         except:
             print('Something went wrong! Unexpected result')
+# in work
+    def getLpmPage(self):
+        for i in self.ups_list['lpm']:
+            combUrl = 'http://'+self.ups_list['lpm'][i]['ipaddres']+'/monitoring/ups_status.html'
+            req = requests.get(combUrl, headers=self.headers)
+            req.encoding = "utf-8"
+            print(req.text)
+
+    def checkError_Lpm():
+        pass
 
 
 
 if __name__ == '__main__':
     shark = GetUPS()
     #shark.getEatonPage()
-    shark.getEntelPage()
+    #shark.getEntelPage()
+    shark.getLpmPage()
     input('press enter to exit')
 
 
