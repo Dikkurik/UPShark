@@ -2,7 +2,9 @@
 
 Тестовый проект для практики Requests, Selenium
 
-**UPShark** Скрипт для опроса ИБП фирмы Eaton серии 9000, Entel, LPM 
+Требуется вэбдрайвер firefox - https://github.com/mozilla/geckodriver/releases/tag/v0.34.0
+
+**UPShark** Скрипт для опроса ИБП фирмы Eaton серии 9000, Entel, LPM
 
 Работает при помощи BeautifulSoup, Requests и Selenium.
 Приемуществом скрипта является то, что происходит загрузка легковесного HTM документа по прямому его адресу. 
