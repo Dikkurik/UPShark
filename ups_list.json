@@ -3,13 +3,14 @@
 },
 
 "entel":{"Тест":{
-    "ipaddres":"10.0.0.1",
+    "ipaddres":"10.0.0.1:1234",
     "login":"admin",
     "password":"admin"
     }},
 
 "lpm":{"Тест":{
-    "ipaddres":"10.0.0.1"
+    "ipaddres":"10.0.0.1:1234"
     }}
 
 }
+

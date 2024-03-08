@@ -42,7 +42,7 @@ class GetUPS():
             try:
                 req = requests.get(combUrl)
                 print(i, 'UPS EATON')
-                print('!INFO Successful connected to UPS at destination', self.ups_list['eaton'][i], '\n')
+                print('!INFO Successful connected to UPS at destination', self.ups_list['eaton'][i])
                 req.encoding = "utf-8"
                 page = req.text
                 self.checkError_Eaton(page, i)
@@ -85,7 +85,7 @@ class GetUPS():
                                     ), headers=self.headers)
                     print(i, '!INFO connected. Status code: ',req.status_code)
                     if req.status_code == 200:
-                        print('!INFO Authorized. Parse data.\n')
+                        print('!INFO Authorized. Parse data.')
                         status = False
                         page = req.text
                         print('UPS ENTEL')
@@ -147,7 +147,7 @@ class GetUPS():
                 dataString = f'{ups_name}'
                 self.table_lpm.append(dataString.ljust(30)+'OK')
             else:
-                print('!UPS Alarm: CHECK UPS ---')
+                print('!UPS Alarm: CHECK UPS')
                 dataString = f'{ups_name}'
                 self.table_lpm.append(dataString.ljust(30) + 'ALARM!')
         except Exception as ex:
