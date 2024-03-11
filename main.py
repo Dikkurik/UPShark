@@ -1,4 +1,4 @@
-# Скрипт для опроса и получения данных ИБП фирмы Eaton, Entel по HTTP.
+# Скрипт для опроса и получения данных ИБП фирмы Eaton, Entel, LPM по HTTP.
 
 import requests, json
 from bs4 import BeautifulSoup
@@ -42,13 +42,13 @@ class GetUPS():
             try:
                 req = requests.get(combUrl)
                 print(i, 'UPS EATON')
-                print('!INFO Successful connected to UPS at destination', self.ups_list['eaton'][i])
+                print('    !INFO Successful connected to UPS at destination', self.ups_list['eaton'][i])
                 req.encoding = "utf-8"
                 page = req.text
                 self.checkError_Eaton(page, i)
             except:
-                print(i, '!ERROR Connection timed out\n')
-                self.table_eaton.append('Conn. timed out')
+                print(i, '    !ERROR Connection timed out\n')
+                self.table_eaton.append(str(i).ljust(30)+'Conn. timed out')
 
     def checkError_Eaton(self, page: str, ups_name: str) -> int:
         soup = BeautifulSoup(page, 'lxml')
@@ -57,17 +57,17 @@ class GetUPS():
         try:        
             if len(errors) > 0:
                 print(f'Detected {len(errors)} alarms!')
-                print('!UPS Alarm: CHECK UPS')
+                print('    !ERROR UPS Alarm: CHECK UPS\n')
                 dataString = f'{ups_name}'
                 self.table_eaton.append(dataString.ljust(30)+f'ALARM! ({len(errors)})!')
                 return len(errors)
             else:
-                print('Status OK\n')
+                print('    Status OK\n')
                 dataString = f'{ups_name}'
                 self.table_eaton.append(dataString.ljust(30)+'OK')
                 return len(errors)
         except Exception as ex:
-            print('!ERROR Something went wrong! Unexpected result\n',ex)
+            print('    !ERROR Something went wrong! Unexpected result:',ex,'\n')
 
     # Entel functions
     def getEntelPage(self):
@@ -77,31 +77,30 @@ class GetUPS():
             try:
                 num = 1
                 status = True
+                print(i, 'UPS ENTEL')
                 while status:
                     req = requests.get(combUrl, 
                                     auth=(
                                     self.ups_list['entel'][i]['login'],
                                     self.ups_list['entel'][i]['password']
                                     ), headers=self.headers)
-                    print(i, '!INFO connected. Status code: ',req.status_code)
+                    print('    !INFO connected. Status code: ',req.status_code)
                     if req.status_code == 200:
-                        print('!INFO Authorized. Parse data.')
+                        print('    !INFO Authorized. Parse data.')
                         status = False
                         page = req.text
-                        print('UPS ENTEL')
-                        print('!INFO Successful connected to UPS at destination', self.ups_list['entel'][i]['ipaddres'])
+                        
+                        print('    !INFO Successful connected and authorized to UPS at destination', self.ups_list['entel'][i]['ipaddres'])
                         self.checkError_Entel(page, i)
-                        print('\n') 
                     else:
-                        print('!ERROR authorization fail.')
-                        print('!INFO Retry connect. Tries:', num)
+                        print('    !ERROR authorization fail.')
+                        print('    !INFO Retry connect. Tries:', num)
                         num+=1
                                
             except:
-                print('!ERROR Connection timed out')
-                print('!INFO Возможные причины: Неверный логин или пароль; нет связи с объектом')
-                print('\n')
-                self.table_entel.append('Conn. timed out or check credential')
+                print('    !ERROR Connection timed out')
+                print('    !INFO Возможные причины: Неверный логин или пароль; нет связи с объектом\n')
+                self.table_entel.append(str(i).ljust(30)+'Conn. timed out or check credential')
 
     def checkError_Entel(self, page, ups_name):
         soup = BeautifulSoup(page, 'lxml')
@@ -111,48 +110,49 @@ class GetUPS():
         stat = list(statuses)
         try:
             if statusOK in str(stat):
-                print('Status OK')
+                print('    Status OK\n')
                 dataString = f'{ups_name}'
                 self.table_entel.append(dataString.ljust(30) + 'OK')
             else:
-                print('!UPS Alarm: CHECK UPS ')
+                print('    !ERROR UPS Alarm: CHECK UPS\n')
                 dataString = f'{ups_name}'
                 self.table_entel.append(dataString.ljust(30) + 'ALARM!')
         except Exception as ex:
-            print('!ERROR Something went wrong! Unexpected result\n',ex)
-            self.table_entel.append('Unexpected result')
+            print('    !ERROR Something went wrong! Unexpected result:',ex,'\n')
+            self.table_entel.append(dataString.ljust(30)+'Unexpected result')
 
     def getLpmPage(self):
         for i in self.ups_list['lpm']:
             combUrl = 'http://'+self.ups_list['lpm'][i]['ipaddres']+'/monitoring/ups_status.html'
+            print(i, 'UPS LPM')
             try:
                 req = self.driver.get(url=combUrl)
-                print(i,'!INFO connected. Loading web page...')
-                # set timew to download js content on web page
+                print('    !INFO connected. Run container... Loading web page...')
+                # set timer to download js content on web page
                 time.sleep(5)
                 page = self.driver.execute_script("return document.getElementsByTagName('html')[0].innerHTML")
                 self.checkError_Lpm(page, i)
             except Exception as ex:
-                print('!ERROR', ex)
-                self.table_lpm.append('Conn. timed out')
+                print('    !ERROR', ex,'\n')
+                self.table_lpm.append(str(i).ljust(30)+'Conn. timed out')
 
     def checkError_Lpm(self, page, ups_name):
         soup = BeautifulSoup(page, 'lxml')
         page_text = soup.text
-        print('!INFO parse data')
+        print('    !INFO parse data')
         statusOK = 'Онлайн'
         try:
             if statusOK in page_text:
-                print('Status OK')
+                print('    Status OK\n')
                 dataString = f'{ups_name}'
                 self.table_lpm.append(dataString.ljust(30)+'OK')
             else:
-                print('!UPS Alarm: CHECK UPS')
+                print('    !ERROR UPS Alarm: CHECK UPS\n')
                 dataString = f'{ups_name}'
                 self.table_lpm.append(dataString.ljust(30) + 'ALARM!')
         except Exception as ex:
-            print('!ERROR Something went wrong! Unexpected result\n',ex)
-            self.table_lpm.append('Unexpected result')
+            print('    !ERROR Something went wrong! Unexpected result',ex,'\n')
+            self.table_lpm.append(dataString.ljust(30), 'Unexpected result')
 
 
     def showReport(self):
