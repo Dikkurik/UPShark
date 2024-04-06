@@ -10,6 +10,12 @@
 
 "lpm":{"Тест":{
     "ipaddres":"10.0.0.1:1234"
+    }},
+    
+"9sx":{"Тест":{
+    "ipaddres":"10.0.0.1:1234",
+    "login":"admin",
+    "password":"admin"
     }}
 
 }

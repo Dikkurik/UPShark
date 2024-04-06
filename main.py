@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.common.by import By
 import time
 
 print ("""
@@ -16,7 +17,7 @@ print ("""
 
 work in progress
 
-Started UPShark script ver. 1.04              
+Started UPShark script ver. 1.06              
 """)
 
 class GetUPS():
@@ -32,6 +33,7 @@ class GetUPS():
         self.table_eaton = ['UPS Eaton report','[____________NAME____________][STATUS]']
         self.table_entel = ['UPS Entel report','[____________NAME____________][STATUS]']
         self.table_lpm =   ['UPS LPM report', '[_____________NAME___________][STATUS]']
+        self.table_9sx = ['UPS 9sx report', '[_____________NAME___________][STATUS]']
         
 
     #Eaton functions
@@ -39,9 +41,9 @@ class GetUPS():
         for i in (self.ups_list['eaton']):
             #CombineURl URL 
             combUrl = 'http://'+self.ups_list['eaton'][i]+'/ups_propAlarms.htm'
+            print(i, 'UPS EATON')
             try:
                 req = requests.get(combUrl)
-                print(i, 'UPS EATON')
                 print('    !INFO Successful connected to UPS at destination', self.ups_list['eaton'][i])
                 req.encoding = "utf-8"
                 page = req.text
@@ -50,7 +52,7 @@ class GetUPS():
                 print(i, '    !ERROR Connection timed out\n')
                 self.table_eaton.append(str(i).ljust(30)+'Conn. timed out')
 
-    def checkError_Eaton(self, page: str, ups_name: str) -> int:
+    def checkError_Eaton(self, page: str, ups_name: str):
         soup = BeautifulSoup(page, 'lxml')
         errors = []
         errors = soup.find_all(class_='listline1')
@@ -84,7 +86,13 @@ class GetUPS():
                                     self.ups_list['entel'][i]['login'],
                                     self.ups_list['entel'][i]['password']
                                     ), headers=self.headers)
-                    print('    !INFO connected. Status code: ',req.status_code)
+                    print('    !INFO connected. Status code:',req.status_code)
+
+                    if num >= 10:
+                        print (f'    !ERROR Connection to device was not succefull, tries: {num}\n')
+                        self.table_entel.append(str(i).ljust(30)+f'Conn. error CODE: {req.status_code}')
+                        status = False
+
                     if req.status_code == 200:
                         print('    !INFO Authorized. Parse data.')
                         status = False
@@ -92,10 +100,14 @@ class GetUPS():
                         
                         print('    !INFO Successful connected and authorized to UPS at destination', self.ups_list['entel'][i]['ipaddres'])
                         self.checkError_Entel(page, i)
+                    
+                    
+
                     else:
-                        print('    !ERROR authorization fail.')
-                        print('    !INFO Retry connect. Tries:', num)
+                        print(f'    !ERROR authorization or connection fail')
+                        print(f'    !INFO Retry to connect. Tries:{num}')
                         num+=1
+                        
                                
             except:
                 print('    !ERROR Connection timed out')
@@ -154,6 +166,43 @@ class GetUPS():
             print('    !ERROR Something went wrong! Unexpected result',ex,'\n')
             self.table_lpm.append(dataString.ljust(30), 'Unexpected result')
 
+    def getEaton9sx(self):
+        for i in self.ups_list['9sx']:
+            # Eaton 9sx using https connection
+            combUrl = 'https://'+self.ups_list['9sx'][i]['ipaddres']
+            print(i, 'UPS 9SX')
+            try:
+                req = self.driver.get(url=combUrl)
+                time.sleep(5)
+                print('    !INFO connected. Run container... Loading web page...')
+
+                # pass username and password then click login button
+                self.driver.find_element(By.ID, 'loginpage-login-input-username').send_keys(self.ups_list['9sx'][i]['login'])
+                self.driver.find_element(By.ID, 'loginpage-login-input-password').send_keys(self.ups_list['9sx'][i]['password'])
+                self.driver.find_element(By.ID, 'loginpage-login-button-connexion').click()
+
+                # set timer to download js content on web page
+                time.sleep(5)
+                page = self.driver.execute_script("return document.getElementById('home-alarm-list-pagination').innerHTML")
+                self.checkError_9sx(page, i)
+            except Exception as ex:
+                print('    !ERROR', ex,'\n')
+                self.table_9sx.append(str(i).ljust(30)+'Conn. timed out')
+
+    def checkError_9sx(self, page, ups_name):
+        print('    !INFO parse data')
+        try:
+            if 'No alarms to display' in page:
+                dataString = f'{ups_name}'
+                self.table_9sx.append(dataString.ljust(30)+'OK')
+                print('    Status OK\n')
+            else:
+                dataString = f'{ups_name}'
+                self.table_9sx.append(dataString.ljust(30)+'ALARM!')
+                print('    !ERROR UPS Alarm: CHECK UPS\n')
+        except Exception as ex:
+            print('    !ERROR Something went wrong! Unexpected result',ex,'\n')
+            self.table_lpm.append(dataString.ljust(30), 'Unexpected result')
 
     def showReport(self):
         print('Status report:\n')
@@ -166,12 +215,16 @@ class GetUPS():
         for i in self.table_lpm:    
             print(i)
         print('\n\n')
+        for i in self.table_9sx:    
+            print(i)
+        print('\n\n')
 
 if __name__ == '__main__':
     shark = GetUPS()
     shark.getEatonPage()
     shark.getEntelPage()
     shark.getLpmPage()
+    shark.getEaton9sx()
     shark.showReport()
     input('press enter to exit')
 
